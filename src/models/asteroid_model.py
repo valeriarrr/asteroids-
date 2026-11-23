@@ -64,3 +64,21 @@ class AsteroidModel(GameObject):
             screen_h=screen_h,
         )
         self.image_index = None
+
+class ExplosionModel:
+    """Класс покадровой анимации взрыва на месте уничтоженного астероида."""
+
+    def __init__(self, x, y, total_frames=24):
+        """Инициализация взрыва в заданных координатах."""
+        self.x = x
+        self.y = y
+        self.current_frame = 0
+        self.total_frames = total_frames
+        self.finished = False
+
+    def update(self):
+        """Переключает кадр анимации взрыва."""
+        self.current_frame += 1
+        if self.current_frame >= self.total_frames:
+            self.finished = True
+
