@@ -10,14 +10,15 @@ from src.widgets.controls import Controls
 class App:
     """Управляет окном, состоянием игры, столкновениями и игровым циклом."""
 
+    # Глобальные параметры игры
     GAME_TITLE = 'AIRPLANE GOOD GAME'
-    SCREEN_WIDTH = 800
-    SCREEN_HEIGHT = 600
-    FPS_DELAY_MS = 20
-    ASTEROID_COUNT = 5
-    ASTEROID_SPAWN_MS = 1200
-    SPLASH_WIDTH = 520
-    SPLASH_HEIGHT = 360
+    SCREEN_WIDTH = 800          # Ширина игрового поля (пикс.)
+    SCREEN_HEIGHT = 600         # Высота игрового поля (пикс.)
+    FPS_DELAY_MS = 20           # Интервал обновления кадра (~50 FPS)
+    ASTEROID_COUNT = 5          # Количество астероидов на поле
+    ASTEROID_SPAWN_MS = 1200    # Частота генерации новых астероидов (мс)
+    SPLASH_WIDTH = 520          # Ширина тактической заставки
+    SPLASH_HEIGHT = 360         # Высота тактической заставки
 
     def __init__(self):
         """Инициализирует окно Tkinter, модели и рендерер."""
@@ -34,6 +35,7 @@ class App:
         )
         self.canvas.pack()
 
+        # Состояние игры и выбранная тема ('night' или 'day')
         self.in_game = False
         self.theme = 'night'
         self.theme_selected = False
@@ -42,6 +44,7 @@ class App:
         self.score = 0
         self.last_spawn_time = 0
 
+        # Игровые сущности
         self.player = PlayerModel(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         self.bullets = []
         self.asteroids = []
@@ -54,6 +57,14 @@ class App:
         """Запускает главный цикл приложения."""
         self._game_loop()
         self.root.mainloop()
+
+    def is_click_on_splash(self, click_x, click_y):
+        """Проверяет, попал ли клик мыши внутрь прямоугольника заставки."""
+        cx = self.SCREEN_WIDTH / 2
+        cy = self.SCREEN_HEIGHT / 2
+        half_w = self.SPLASH_WIDTH / 2
+        half_h = self.SPLASH_HEIGHT / 2
+        return (cx - half_w <= click_x <= cx + half_w) and (cy - half_h <= click_y <= cy + half_h)
 
     def handle_theme_click(self, click_x, click_y):
         """Переключает режим ДЕНЬ / НОЧЬ и разрешает запуск игры."""
@@ -71,7 +82,7 @@ class App:
         return False
 
     def start_game(self):
-        """Начинает новую игру после выбора темы и нажатия кнопки старта."""
+        """Начинает новую игру при щелчке по заставке."""
         self.in_game = True
         self.score = 0
         self.player.lives = PlayerModel.INITIAL_LIVES
@@ -81,6 +92,7 @@ class App:
         self.asteroids.clear()
         self.explosions.clear()
 
+        # Генерируем 5 начальных астероидов
         for _ in range(self.ASTEROID_COUNT):
             self.asteroids.append(
                 AsteroidModel(
@@ -95,17 +107,16 @@ class App:
     def fire_missile(self):
         """Выпускает ракету из носа корабля."""
         nose_x, nose_y = self.player.get_nose_position()
-        self.bullets.append(
-            BulletModel(
-                x=nose_x,
-                y=nose_y,
-                angle=self.player.angle,
-                ship_vx=self.player.vx,
-                ship_vy=self.player.vy,
-                screen_w=self.SCREEN_WIDTH,
-                screen_h=self.SCREEN_HEIGHT,
-            )
+        missile = BulletModel(
+            x=nose_x,
+            y=nose_y,
+            angle=self.player.angle,
+            ship_vx=self.player.vx,
+            ship_vy=self.player.vy,
+            screen_w=self.SCREEN_WIDTH,
+            screen_h=self.SCREEN_HEIGHT,
         )
+        self.bullets.append(missile)
 
     def _spawn_asteroids_periodically(self):
         """Поддерживает количество астероидов равным ASTEROID_COUNT."""
@@ -126,6 +137,7 @@ class App:
 
     def _handle_collisions(self):
         """Обрабатывает столкновения ракет с астероидами и корабля с астероидами."""
+        # 1. Столкновение ракеты и астероида (+1 очко, взрыв на месте астероида)
         for ast in self.asteroids[:]:
             for missile in self.bullets[:]:
                 if ast.collides_with(missile):
@@ -135,6 +147,7 @@ class App:
                     self.score += 1
                     break
 
+        # 2. Столкновение корабля и астероида (-1 жизнь, возрождение корабля в центре)
         for ast in self.asteroids[:]:
             if ast.collides_with(self.player):
                 self.asteroids.remove(ast)
@@ -149,7 +162,6 @@ class App:
     def _end_game(self):
         """Завершает игру при потере всех жизней и возвращает заставку."""
         self.in_game = False
-        self.theme_selected = False
         self.asteroids.clear()
         self.bullets.clear()
         self.explosions.clear()

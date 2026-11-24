@@ -10,17 +10,25 @@ class Controls:
         self.root = root
         self.canvas = canvas
 
+        # Вращение корабля (стрелки влево/вправо)
         root.bind('<KeyPress-Left>', lambda e: setattr(self.app.player, 'rotating_left', True))
         root.bind('<KeyRelease-Left>', lambda e: setattr(self.app.player, 'rotating_left', False))
         root.bind('<KeyPress-Right>', lambda e: setattr(self.app.player, 'rotating_right', True))
         root.bind('<KeyRelease-Right>', lambda e: setattr(self.app.player, 'rotating_right', False))
+
+        # Ускорение корабля (стрелка вверх)
         root.bind('<KeyPress-Up>', lambda e: setattr(self.app.player, 'thrusting', True))
         root.bind('<KeyRelease-Up>', lambda e: setattr(self.app.player, 'thrusting', False))
+
+        # Выстрел ракетой (<Space>)
         root.bind('<KeyPress-space>', self._on_space_press)
         root.bind('<KeyRelease-space>', lambda e: setattr(self.app.player, 'shooting', False))
 
+        # Только клик левой кнопкой мыши запускает действия в меню
         canvas.bind('<Button-1>', self._on_canvas_click)
+        # Движение мыши ТОЛЬКО подсвечивает кнопку, но никогда не запускает игру
         canvas.bind('<Motion>', self._on_canvas_motion)
+
         root.focus_force()
 
     def _on_space_press(self, event):
@@ -42,9 +50,11 @@ class Controls:
     def _on_canvas_click(self, event):
         """Обрабатывает клики на заставке: сначала выбор темы, затем старт игры."""
         if not self.app.in_game:
+            # 1. Клик по кнопкам ДЕНЬ / НОЧЬ
             if self.app.handle_theme_click(event.x, event.y):
                 return
 
+            # 2. Клик по кнопке старта сработает ТОЛЬКО если тема уже выбрана
             if self.app.theme_selected:
                 cx = self.app.SCREEN_WIDTH / 2
                 cy = self.app.SCREEN_HEIGHT / 2

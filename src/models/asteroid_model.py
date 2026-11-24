@@ -1,10 +1,10 @@
-"""Модели игровых объектов: базовое физическое тело и астероид."""
+"""Модели игровых объектов: базовый класс, астероид и анимация взрыва."""
 import math
 import random
 
 
 class GameObject:
-    """Базовый класс для движущихся объектов в тороидальном пространстве."""
+    """Базовый класс для всех движущихся объектов в тороидальном пространстве."""
 
     def __init__(self, x, y, vx, vy, angle, angular_vel, radius, screen_w, screen_h):
         """Инициализация параметров физического тела."""
@@ -19,13 +19,13 @@ class GameObject:
         self.screen_h = screen_h
 
     def update(self):
-        """Обновляет координаты и угол поворота с учетом зацикленного экрана."""
+        """Обновляет координаты и угол поворота с учетом тороидальной геометрии."""
         self.x = (self.x + self.vx) % self.screen_w
         self.y = (self.y + self.vy) % self.screen_h
         self.angle = (self.angle + self.angular_vel) % 360
 
     def collides_with(self, other):
-        """Проверяет столкновение двух круглых объектов."""
+        """Проверяет столкновение двух круглых объектов по расстоянию между центрами."""
         distance = math.hypot(self.x - other.x, self.y - other.y)
         return distance < (self.radius + other.radius)
 
@@ -39,10 +39,11 @@ class AsteroidModel(GameObject):
     ASTEROID_RADIUS = 28
 
     def __init__(self, screen_w, screen_h, safe_x=None, safe_y=None):
-        """Создает астероид в случайной точке, не пересекающейся с центром."""
+        """Создает астероид в случайной точке, не пересекающейся с кораблем."""
         while True:
             x = random.uniform(0, screen_w)
             y = random.uniform(0, screen_h)
+            # Не спавним астероид прямо на игроке
             if safe_x is None or math.hypot(x - safe_x, y - safe_y) > 120:
                 break
 
@@ -65,8 +66,9 @@ class AsteroidModel(GameObject):
         )
         self.image_index = None
 
+
 class ExplosionModel:
-    """Класс покадровой анимации взрыва на месте уничтоженного астероида."""
+    """Класс покадровой (тайловой) анимации взрыва на месте уничтоженного астероида."""
 
     def __init__(self, x, y, total_frames=24):
         """Инициализация взрыва в заданных координатах."""
@@ -81,4 +83,3 @@ class ExplosionModel:
         self.current_frame += 1
         if self.current_frame >= self.total_frames:
             self.finished = True
-
